@@ -46,6 +46,7 @@ class RC4 {
         int imageEncryption(int data, int *i, int *j);
         int imageToHex(string fileName);
         int hexToImage(string fileName);
+        int hexToVideo(string fileName);
     private:
         vector<uint8_t> S;
         int i = 0, j = 0;
@@ -101,7 +102,6 @@ int RC4::imageEncryption(int data, int *i,int *j){
     *j = (*j + S[*i]) % 256;
     swap(S[*i], S[*j]);
     data ^= S[(S[*i] + S[*j]) % 256];
-    cout << "So your data is: " << data;
     return data;
 }
 
@@ -137,35 +137,15 @@ int RC4::imageToHex(string fileName){
     char byte;
     char bytenew;
     while (jpegFile.get(byte)) {
-        // cout << (int)(unsigned char)byte << endl;
         hexFile << std::setw(2) << std::setfill('0') << std::hex << (int)(unsigned char)byte << " ";
-        hexFile2 << setw(2) << setfill('0') << hex << imageEncryption((int)(unsigned char)bytenew,&i, &j) << " ";
-        // dataString += hexConverter((uint8_t)(unsigned char)byte);
+        hexFile2 << setw(2) << setfill('0') << hex << imageEncryption((int)(unsigned char)byte,&i, &j) << " ";
     }
-    // while (jpegFile.get(bytenew)) {
-    //     // dataString += hexConverter((uint8_t)(unsigned char)byte);
-    // }
-    // vector<uint8_t> data;
-    // for(int i = 1 ; i < dataString.length() ; i+=2) {
-    //     if(dataString[i] != ' ') sum = sum * 10 + (dataString[i] - '0');
-    //     else {
-    //         data.push_back(uint8_t(sum));
-    //         sum = 0;
-    //     }
-    //     uint8_t sum = 0;
-    //     for(int j = 0 ; j <= 1 ; j++){
-    //         int add = dataString[i-j] >= 'a' && dataString[i-j] <= 'z' ? (dataString[i-j] - 'a' + 10) : dataString[i-j] - '0';
-    //         sum += add * pow(16,j);
-    //         data.push_back(sum);
-    //     }
-    // }   
-    // encryptDecrypt(data, 0);
 
-
-    // Close the files
     jpegFile.close();
     hexFile.close();
-
+    hexFile2.close();
+    i = 0;
+    j = 0;
     cout << "Conversion successful" << endl;
 
     return 0;
@@ -173,14 +153,13 @@ int RC4::imageToHex(string fileName){
 
 int RC4::hexToImage(string fileName){
     // Open the hex file in text mode
-    ifstream hexFile("output.hex");
+    ifstream hexFile(fileName);
 
     // Check if the file was opened successfully
     if (!hexFile.is_open()) {
         cerr << "Error opening hex file" << endl;
         return 1;
     }
-
     // Open the output image file in binary mode
     ofstream imageFile("output_image.jpg", ios::binary);
 
@@ -197,7 +176,7 @@ int RC4::hexToImage(string fileName){
         istringstream hexStream(hexValue);
         int byteValue;
         hexStream >> hex >> byteValue;
-        cout << byteValue;
+        byteValue = imageEncryption(byteValue, &i, &j);
         char byte = static_cast<char>(byteValue);
         imageFile.put(byte);
     }
@@ -207,7 +186,48 @@ int RC4::hexToImage(string fileName){
     imageFile.close();
 
     cout << "Conversion back to image successful" << endl;
+    i = 0;
+    j = 0;
+    return 0;
+}
 
+int RC4::hexToVideo(string fileName){
+    // Open the hex file in text mode
+    ifstream hexFile(fileName);
+
+    // Check if the file was opened successfully
+    if (!hexFile.is_open()) {
+        cerr << "Error opening hex file" << endl;
+        return 1;
+    }
+    // Open the output image file in binary mode
+    ofstream imageFile("output_image.mp4", ios::binary);
+
+    // Check if the file was opened successfully
+    if (!imageFile.is_open()) {
+        cerr << "Error creating image file" << endl;
+        hexFile.close();
+        return 1;
+    }
+
+    // Read hex values from the file and convert them back to binary
+    string hexValue;
+    while (hexFile >> setw(2) >> hexValue) {
+        istringstream hexStream(hexValue);
+        int byteValue;
+        hexStream >> hex >> byteValue;
+        byteValue = imageEncryption(byteValue, &i, &j);
+        char byte = static_cast<char>(byteValue);
+        imageFile.put(byte);
+    }
+
+    // Close the files
+    hexFile.close();
+    imageFile.close();
+
+    cout << "Conversion back to image successful" << endl;
+    i = 0;
+    j = 0;
     return 0;
 }
 
@@ -217,7 +237,9 @@ void display(){
     cout << "2. Decryption a text" << endl;
     cout << "3. Encryption an image" << endl;
     cout << "4. Decryption an image" << endl;
-    cout << "5. Exit" << endl;
+    cout << "5. Encryption an video" << endl;
+    cout << "6. Decryption an video" << endl;
+    cout << "7. Exit" << endl;
     cout << "Enter your service number:" << endl;
 }
 
@@ -273,14 +295,28 @@ int main()
             }
             rc4.encryptDecrypt(data, 1);
         }
-        if(selection == 3) {
+        if(selection == 3 || selection == 5) {
             string fileName;
             cout << "Enter your file name: ";
             cin.ignore();
             getline(cin, fileName);
             int result = rc4.imageToHex(fileName);
         }
-    } while(selection != 5) ;
+        if(selection == 4){
+            string fileName;
+            cout << "Enter your hex file name: ";
+            cin.ignore();
+            getline(cin , fileName);
+            int result = rc4.hexToImage(fileName);
+        }
+        if(selection == 6){
+            string fileName;
+            cout << "Enter your hex file name: ";
+            cin.ignore();
+            getline(cin , fileName);
+            int result = rc4.hexToVideo(fileName);
+        }
+    } while(selection != 7) ;
     return 0;
 
 }

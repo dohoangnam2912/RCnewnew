@@ -6,7 +6,7 @@
 
 int main() {
     // Open the hex file in text mode
-    std::ifstream hexFile("output.hex");
+    std::ifstream hexFile("output2.hex");
 
     // Check if the file was opened successfully
     if (!hexFile.is_open()) {
